@@ -375,7 +375,7 @@ def draw_model_statistics(ax, positions, train_images, y_top, x_start=-0.08):
         return
 
     # 参数设置
-    TRAIN_IMG_ZOOM = 0.15  # 图像缩放比例
+    TRAIN_IMG_ZOOM = 0.15  # 图像缩放比例（保持不变）
     img_height = 0.05      # 图像高度估算
     
     # 标签参数
@@ -385,8 +385,8 @@ def draw_model_statistics(ax, positions, train_images, y_top, x_start=-0.08):
     axes_y_range = 3.0  # -2.0 to 1.0
     label_height_data = (label_fontsize / 72.0) * (axes_y_range / fig_height_inches)
     
-    img_to_label_gap = 0.01
-    label_gap = 0.003
+    img_to_label_gap = 0.008
+    label_gap = 0.004
     bottom_gap = 0.02
 
     # ==========================================
@@ -415,10 +415,9 @@ def draw_model_statistics(ax, positions, train_images, y_top, x_start=-0.08):
     ax.axhline(y=top_line_y, color='#AAAAAA', linewidth=1, linestyle='--', zorder=20)
     
     # ==========================================
-    # 使用固定间距绘制
+    # 使用固定间距绘制（按要求不改变车型图像间距）
     # ==========================================
-    # 用户要求的固定间距
-    train_spacing = 0.025
+    train_spacing = 0.03
     
     # 绘制起始位置
     current_x = x_start
@@ -471,11 +470,12 @@ def draw_model_statistics(ax, positions, train_images, y_top, x_start=-0.08):
         current_x += train_spacing
 
 # ==========================================
-# 底部信息面板绘制函数
+# 底部信息面板绘制函数 (调整版 - 10列布局)
 # ==========================================
 def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
     """
     绘制固定列表格，包含表头：车次、始发、终到。
+    调整为10列布局
     """
     # 排序：direction 0(上行)在前，1(下行)在后；同方向按车次排序
     sorted_trains = sorted(all_trains, key=lambda x: (x['direction'], x['train']))
@@ -483,11 +483,16 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
     # 字体改为微软雅黑
     table_font = FontProperties(family='Microsoft YaHei')
     
-    # 表格布局参数
-    num_cols = 7
-    col_width = 1.16 / num_cols
+    # ==========================================
+    # 表格布局参数 - 调整为10列
+    # ==========================================
+    num_cols = 10  # 原值: 7
     
-    # 行高设置
+    # 总宽度保持1.16，平均分配给10列
+    total_width = 1.16
+    col_width = total_width / num_cols  # 0.116
+    
+    # 行高设置（保持不变）
     header_height = 0.06
     row_height = 0.052
     
@@ -499,11 +504,17 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
     header_y = y_top
     start_y = header_y - header_height
     
+    # ==========================================
     # 定义子列宽度比例
-    total_units = 36.0
+    # 车次：8单位（6字符 + 1圆点 + 间距）
+    # 始发站：15单位（7汉字 + 边距，1汉字=2单位）
+    # 终到站：15单位（7汉字 + 边距）
+    # 总计：38单位
+    # ==========================================
+    total_units = 38.0
     train_id_units = 8.0
-    start_station_units = 14.0
-    end_station_units = 14.0
+    start_station_units = 15.0
+    end_station_units = 15.0
     
     # 计算各子列在每列中的起始位置
     train_id_x_offset = 0.0
@@ -515,12 +526,16 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
     down_bg_color = '#F5D6D6'
     empty_bg_color = '#FFFFFF'
     
+    # 信息版起始x坐标
+    panel_x_start = -0.08
+    panel_x_end = panel_x_start + total_width
+    
     # ==========================================
     # 第一步：绘制所有底色（zorder=20）
     # ==========================================
     
     # 绘制表头背景
-    ax.add_patch(Rectangle((-0.08, header_y - header_height), 1.16, header_height, 
+    ax.add_patch(Rectangle((panel_x_start, header_y - header_height), total_width, header_height, 
                            facecolor='#E8E8E8', edgecolor='none', zorder=20))
     
     # ==========================================
@@ -530,25 +545,27 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
     line_width = 0.8
     
     # 水平分割线 - 表头底部
-    ax.plot([-0.08, 1.08], [start_y, start_y], color='#000000', linewidth=line_width, zorder=25)
+    ax.plot([panel_x_start, panel_x_end], [start_y, start_y], color='#000000', linewidth=line_width, zorder=25)
     
     # 水平分割线 - 每个数据行
     for row_idx in range(max_rows + 1):
         y_line = start_y - row_idx * row_height
-        ax.plot([-0.08, 1.08], [y_line, y_line], color='#000000', linewidth=line_width, zorder=25)
+        ax.plot([panel_x_start, panel_x_end], [y_line, y_line], color='#000000', linewidth=line_width, zorder=25)
     
     # 垂直分割线 - 大列之间
     for col in range(num_cols + 1):
-        line_x = -0.08 + col * col_width
+        line_x = panel_x_start + col * col_width
         ax.plot([line_x, line_x], [y_min, header_y], color='#000000', linewidth=line_width, zorder=25)
     
-    # 垂直分割线 - 小列之间
+    # 垂直分割线 - 小列之间（始发站和终到站的分隔线）
     for col in range(num_cols):
-        col_start_x = -0.08 + col * col_width
+        col_start_x = panel_x_start + col * col_width
         
+        # 始发站分隔线
         line_x = col_start_x + (start_station_x_offset / total_units) * col_width
         ax.plot([line_x, line_x], [y_min, header_y], color='#999999', linewidth=0.5, zorder=25)
         
+        # 终到站分隔线
         line_x = col_start_x + (end_station_x_offset / total_units) * col_width
         ax.plot([line_x, line_x], [y_min, header_y], color='#999999', linewidth=0.5, zorder=25)
     
@@ -556,20 +573,23 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
     # 第三步：绘制表头文字（zorder=26）
     # ==========================================
     for col in range(num_cols):
-        col_start_x = -0.08 + col * col_width
+        col_start_x = panel_x_start + col * col_width
         
+        # 车次
         text_x = col_start_x + (train_id_x_offset / total_units) * col_width
-        ax.text(text_x + 0.008, header_y - header_height/2, "车次", 
+        ax.text(text_x + 0.006, header_y - header_height/2, "车次", 
                 ha='left', va='center', fontsize=6.5, fontweight='bold', 
                 fontproperties=table_font, color='#333333', zorder=26)
         
+        # 始发站
         text_x = col_start_x + (start_station_x_offset / total_units) * col_width
-        ax.text(text_x + 0.005, header_y - header_height/2, "始发站", 
+        ax.text(text_x + 0.004, header_y - header_height/2, "始发站", 
                 ha='left', va='center', fontsize=6.5, fontweight='bold', 
                 fontproperties=table_font, color='#333333', zorder=26)
         
+        # 终到站
         text_x = col_start_x + (end_station_x_offset / total_units) * col_width
-        ax.text(text_x + 0.005, header_y - header_height/2, "终到站", 
+        ax.text(text_x + 0.004, header_y - header_height/2, "终到站", 
                 ha='left', va='center', fontsize=6.5, fontweight='bold', 
                 fontproperties=table_font, color='#333333', zorder=26)
     
@@ -604,7 +624,7 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
         for col_idx in range(num_cols):
             idx = row_idx * num_cols + col_idx
             
-            x_pos = -0.08 + col_idx * col_width
+            x_pos = panel_x_start + col_idx * col_width
             y_pos = start_y - (row_idx + 1) * row_height
             
             if idx < len(sorted_trains):
@@ -618,12 +638,13 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
                 t_id = train['train']
                 info = schedules.get(t_id, {})
                 
-                # 获取始发站和终到站（现在来源于parse_timetable中的全程站点）
+                # 获取始发站和终到站
                 start_s = info.get('start_station', '?')
                 end_s = info.get('end_station', '?')
                 
+                # 根据新的单位分配调整截断宽度
                 f_id = t_id[:6]
-                f_start = format_fixed_width(start_s, 14)
+                f_start = format_fixed_width(start_s, 14)  # 15单位约等于7汉字
                 f_end = format_fixed_width(end_s, 14)
                 
                 status = train.get('status', 'running')
@@ -635,23 +656,26 @@ def draw_bottom_info_panel(ax, all_trains, schedules, font_prop, y_min, y_top):
                 text_y = y_pos + row_height/2
                 text_color = '#000000'
                 
+                # 车次
                 text_x = x_pos + (train_id_x_offset / total_units) * col_width
                 
-                dot_x = text_x + 0.005
-                ax.plot(dot_x, text_y, 'o', markersize=4, color=dot_color, zorder=27)
+                dot_x = text_x + 0.004
+                ax.plot(dot_x, text_y, 'o', markersize=3.5, color=dot_color, zorder=27)
                 
-                ax.text(dot_x + 0.008, text_y, f_id, 
-                        ha='left', va='center', fontsize=5.5, 
+                ax.text(dot_x + 0.006, text_y, f_id, 
+                        ha='left', va='center', fontsize=5.0, 
                         fontproperties=table_font, color=text_color, zorder=26)
                 
+                # 始发站
                 text_x = x_pos + (start_station_x_offset / total_units) * col_width
-                ax.text(text_x + 0.005, text_y, f_start, 
-                        ha='left', va='center', fontsize=5.5, 
+                ax.text(text_x + 0.004, text_y, f_start, 
+                        ha='left', va='center', fontsize=5.0, 
                         fontproperties=table_font, color=text_color, zorder=26)
                 
+                # 终到站
                 text_x = x_pos + (end_station_x_offset / total_units) * col_width
-                ax.text(text_x + 0.005, text_y, f_end, 
-                        ha='left', va='center', fontsize=5.5, 
+                ax.text(text_x + 0.004, text_y, f_end, 
+                        ha='left', va='center', fontsize=5.0, 
                         fontproperties=table_font, color=text_color, zorder=26)
             else:
                 ax.add_patch(Rectangle((x_pos, y_pos), col_width, row_height, 
@@ -687,9 +711,9 @@ def generate_frames_multi_day(instances, max_mile, station_list, start_dt, end_d
     station_names = list(unique_stations.values())
 
     # ==========================================
-    # 布局参数
+    # 布局参数 - 已调整为横屏比例 (16:10)
     # ==========================================
-    FIG_W_INCH = 19.2
+    FIG_W_INCH = 25.6  # 横屏适配
     FIG_H_INCH = 16.0
     DPI = 300
     
@@ -731,7 +755,9 @@ def generate_frames_multi_day(instances, max_mile, station_list, start_dt, end_d
     GAP_PX = 10
     GAP_DATA = GAP_PX * PX_TO_DATA
     
-    TRAIN_IMG_ZOOM = 0.168
+    # 列车图像缩放比例（适配横屏）
+    TRAIN_IMG_ZOOM = 0.126
+    
     IMG_DATA_HEIGHT = (120 * TRAIN_IMG_ZOOM / 300) * (AXES_Y_RANGE / FIG_H_INCH)
     STOP_OFF = 0.08721 * 0.8
     
@@ -895,10 +921,10 @@ def generate_frames_multi_day(instances, max_mile, station_list, start_dt, end_d
         panel_top_y = -0.5
         ax.axhline(y=panel_top_y, color='#AAAAAA', linewidth=1, linestyle='--', zorder=20)
         
-        # 绘制车型统计信息（传入信息版分割线的y坐标）
+        # 绘制车型统计信息
         draw_model_statistics(ax, positions, train_images, y_top=panel_top_y)
         
-        # 绘制信息版
+        # 绘制信息版（10列布局）
         draw_bottom_info_panel(ax, positions, schedules, CHINESE_FONT, 
                                y_min=AXES_Y_MIN, y_top=panel_top_y)
         
